@@ -1,12 +1,16 @@
 import cv2
-from detector_placas_v2 import detector_placas
+from detector.detector_placas_v2 import detector_placas
 
-capture = cv2.VideoCapture('D:/videos_prueba/12_ MIRE.mp4')
-
+capture = cv2.VideoCapture('C:/Users/Gerardo/Downloads/Untitled.avi')
+aux_placa = ""
 while (capture.isOpened()):
     ret, frame = capture.read()
     if (ret == True):
         cv2.imshow("gato0", frame)
+        placa = detector_placas(frame)
+        if(placa != None):
+            aux_placa = placa
+            print("placa= ",placa)
         if (cv2.waitKey(30) == ord('s')):
             break
     else:
