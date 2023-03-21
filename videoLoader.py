@@ -1,22 +1,25 @@
 import cv2
 from detector.detector_placas_v2 import detector_placas
+from detector.detector import find_plate
 import numpy as np
 import imutils
 
-# capture = cv2.VideoCapture('C:/Users/Gerardo/Downloads/Untitled.avi')
-capture = cv2.VideoCapture('C:/proyectos/Untitled.avi')
+capture = cv2.VideoCapture('C:/Users/Gerardo/Downloads/Untitled.avi')
+# capture = cv2.VideoCapture('C:/proyectos/Untitled.avi')
 aux_placa = ""
 while (capture.isOpened()):
     ret, frame = capture.read()
     frame = imutils.resize(frame,width=1080)
     if (ret == True):
         cv2.imshow("gato0", frame)
-        placa = detector_placas(frame)
+        placa = find_plate(frame)
         if(placa != None):
             aux_placa = placa
             print("placa= ",placa)
         if (cv2.waitKey(100) == ord('s')):
             break
+        k = cv2.waitKey(70) & 0xFF
+        if k == 27 or k == ord('s'): break
     else:
         break
 
