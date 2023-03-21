@@ -3,7 +3,8 @@ from detector.detector_placas_v2 import detector_placas
 import numpy as np
 import imutils
 
-capture = cv2.VideoCapture('C:/Users/Gerardo/Downloads/Untitled.avi')
+# capture = cv2.VideoCapture('C:/Users/Gerardo/Downloads/Untitled.avi')
+capture = cv2.VideoCapture('C:/proyectos/Untitled.avi')
 aux_placa = ""
 while (capture.isOpened()):
     ret, frame = capture.read()
