@@ -3,6 +3,7 @@ import pytesseract
 import numpy as np
 import imutils
 
+flag = True
 cap = cv2.VideoCapture('C:/Users/Gerardo/Downloads/Untitled.avi')
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract'
 kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
@@ -14,6 +15,7 @@ while (cap.isOpened()):
         break
     frame = imutils.resize(frame, width=1300)
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    # template_img = cv2.matchTemplate(gray,gray,cv2.TM_CCOEFF_NORMED)
     gray = cv2.blur(gray, (3, 3))
     # gray = cv2.medianBlur(gray,5)
     canny = cv2.Canny(gray, 80, 150)
@@ -25,8 +27,7 @@ while (cap.isOpened()):
     imAux = cv2.drawContours(imAux, [area_pts], -1, (255), -1)
     image_area = cv2.bitwise_or(canny, canny, mask=imAux)
 
-    cnts, _ = cv2.findContours(
-        image_area, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+    cnts, _ = cv2.findContours(image_area, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
     for cnt in cnts:
         area = cv2.contourArea(cnt)
         epsilon = 0.09 * cv2.arcLength(cnt, True)
@@ -37,7 +38,7 @@ while (cap.isOpened()):
             placa = gray[y:y+h, x:x+w]
 
             # MOSTRAR LA PLACA ENCONTRADA EN UNA VENTANA
-            # cv2.imshow("placa", placa)
+            cv2.imshow("placa", placa)
             config = '--oem 3 --psm 9 -c tessedit_char_whitelist=ABCDEFGHIJKLMÑNOPQRSTUVWXYZ0123456789'
             try:
                 texto_movimiento = pytesseract.image_to_string(
@@ -49,10 +50,11 @@ while (cap.isOpened()):
 
                 if placa_nueva != "" and len(placa_nueva) > 5 and len(placa_nueva) < 8:
                     color = (0, 0, 255)
-                    print("placa= ", placa_nueva)
+                    print('placa= ', placa_nueva)
                     break
                 else:
                     print("placa= ")
+                    break
             except IOError as e:
                 print("Error (%s)." % e)
 
@@ -60,16 +62,23 @@ while (cap.isOpened()):
     cv2.putText(frame, placa_nueva, (10, 30),
                 cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
     cv2.imshow("video", frame)
+    # cv2.imshow("template", template_img)
     # cv2.imshow("imgAux", fgmask)
 
     # MOSTRAR LA SEGUNDA VENTANA QUE SE PASO A ESCALA DE GRISES CON LOS DEMAS FILTROS
-    # cv2.imshow("image_area", image_area)
+    cv2.imshow("image_area", image_area)
 
     k = cv2.waitKey(50) & 0xFF
+    if k == 32:
+        if flag:
+            cv2.waitKey(-1)
+            flag = False
+        else:
+            cv2.waitKey(50)
+            flag = True
+        
     if k == 27:
         break
-    if k == "s":
-        cap.pause()
 
 cap.release()
 cv2.destroyAllWindows()
