@@ -15,7 +15,8 @@ def draw_rectangle(event, x, y, flags, param):
         iy = y
     elif event == cv2.EVENT_LBUTTONUP:
         drawing = False
-        cv2.rectangle(img, (ix, iy), (x, y), (0, 255, 255), -1)
+        area_pts = np.array([[500,250],[1190,250],[1190,500],[500,500]])
+        cv2.rectangle(img, (ix, iy), (x, y), (0, 255, 255), 1)
 
 
 # Create a black image
