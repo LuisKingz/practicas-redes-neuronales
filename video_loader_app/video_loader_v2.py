@@ -111,6 +111,4 @@ def draw_roi(frame):
         elif key == ord("c"):
             cv2.destroyWindow("draw_roi")
             return roi_pts
-
-
 main()

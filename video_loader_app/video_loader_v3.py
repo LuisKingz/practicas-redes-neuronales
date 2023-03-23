@@ -4,9 +4,9 @@ import numpy as np
 import imutils
 
 flag = True
-
+color, texto_movimiento,aux_text = (0, 255, 0), "Placa: ",""
 def select_area_of_interest(frame):
-    # frame = imutils.resize(frame, width=1200)
+    frame = imutils.resize(frame, width=1500)
     # Create a copy of the input frame to display the selected area
     frame_copy = frame.copy()
     # Select the area of interest using the cv2.selectROI function
@@ -45,7 +45,7 @@ def main():
     cv2.destroyAllWindows()
 
 def process_frame(frame, area_pts):
-    # frame = imutils.resize(frame, width=1200)
+    frame = imutils.resize(frame, width=1500)
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     gray = cv2.blur(gray, (2, 2))
     canny = cv2.Canny(gray, 80, 150)
@@ -57,7 +57,7 @@ def process_frame(frame, area_pts):
     cv2.imshow("image_area",image_area)
 
     cnts = get_contours(image_area)
-    color, texto_movimiento = (0, 255, 0), "Placa: "
+    global color, texto_movimiento,aux_text
     for cnt in cnts:
         area, approx = get_area_and_approx(cnt)
         if len(approx) == 4 and area > 8000:
@@ -66,12 +66,15 @@ def process_frame(frame, area_pts):
             placa = gray[y:y+h,x:x+w]
             # cv2.imshow("placa", placa)
             texto_movimiento = get_plate_text(placa)
-            if texto_movimiento != "":
-                color = (0,0,255)
+            print(len(texto_movimiento))
+            if texto_movimiento != "" and len(texto_movimiento) > 7:
+                color = (0,255,0)
                 print(texto_movimiento)
-                break
+                aux_text = texto_movimiento
+                draw_analysis_area(frame, area_pts, color, texto_movimiento)
             else:
-                texto_movimiento = None
+                texto_movimiento = "Placa: No detectada"
+                draw_analysis_area(frame, area_pts, color, texto_movimiento)
 
     draw_analysis_area(frame, area_pts, color, texto_movimiento)
     return frame
