@@ -2,15 +2,18 @@ import cv2
 import pytesseract
 import numpy as np
 import imutils
+import tkinter as tk
+from tkinter import ttk, messagebox
 
 flag = True
-color, texto_movimiento,aux_text = (0, 255, 0), "Placa: ",""
+text_identify = False
+
 def select_area_of_interest(frame):
     frame = imutils.resize(frame, width=1500)
     # Create a copy of the input frame to display the selected area
     frame_copy = frame.copy()
     # Select the area of interest using the cv2.selectROI function
-    x, y, w, h = cv2.selectROI('Select Area of Interest', frame_copy)
+    x, y, w, h = cv2.selectROI('Select Area of Interest', frame_copy,True,False)
     # Close the window
     cv2.destroyAllWindows()
     # Return the selected area as a numpy array of points
@@ -22,17 +25,24 @@ def main():
     
     ret, frame = cap.read()
     area_pts = select_area_of_interest(frame)
+    if area_pts[0][0] == 0 and area_pts [1][0] == 0 and area_pts[2][0] == 0 and area_pts[3][0] == 0:
+        response =  messagebox.askyesno(message="Mensaje", title="Título")
+        if response:
+            print("de nuevo")
+        else:
+            print("continuar")        
     
+    texto_placa = "Placa: No identificada"
     while (cap.isOpened()):
         ret, frame = cap.read();
         if ret == False: break
         
-        frame = process_frame(frame,area_pts)
+        frame = process_frame(frame,area_pts,texto_placa)
         
         cv2.imshow("video", frame)
         k = cv2.waitKey(70) & 0xFF
         if k == 32:
-            global flag
+            global flag, text_identify
             if flag:
                 cv2.waitKey(-1)
                 flag = False
@@ -40,11 +50,18 @@ def main():
                 cv2.waitKey(50)
                 flag = True
         if k == 27: break
+        if k == ord("t"):
+            text_identify = True
+            print("Parar de identificar")
+        if k == ord("f"):
+            text_identify = False
+            print("Volver a identificar")
         
     cap.release()
     cv2.destroyAllWindows()
 
-def process_frame(frame, area_pts):
+def process_frame(frame, area_pts,texto_placa):
+    global text_identify
     frame = imutils.resize(frame, width=1500)
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     gray = cv2.blur(gray, (2, 2))
@@ -54,29 +71,27 @@ def process_frame(frame, area_pts):
     
     imAux = create_mask(frame, area_pts, canny)
     image_area = cv2.bitwise_or(canny, canny, mask=imAux)
-    cv2.imshow("image_area",image_area)
+    # cv2.imshow("image_area",image_area)
 
     cnts = get_contours(image_area)
-    global color, texto_movimiento,aux_text
+    color = (0, 255, 0)  
     for cnt in cnts:
+        if text_identify:
+            break
         area, approx = get_area_and_approx(cnt)
         if len(approx) == 4 and area > 8000:
             x, y, w, h = cv2.boundingRect(cnt)
             cv2.rectangle(frame, (x,y), (x+w,y+h), (0,255,0), 2)
             placa = gray[y:y+h,x:x+w]
             # cv2.imshow("placa", placa)
-            texto_movimiento = get_plate_text(placa)
-            print(len(texto_movimiento))
-            if texto_movimiento != "" and len(texto_movimiento) > 7:
-                color = (0,255,0)
-                print(texto_movimiento)
-                aux_text = texto_movimiento
-                draw_analysis_area(frame, area_pts, color, texto_movimiento)
-            else:
-                texto_movimiento = "Placa: No detectada"
-                draw_analysis_area(frame, area_pts, color, texto_movimiento)
+            texto_placa = get_plate_text(placa)
+            color = (0,255,0)
+            if len(texto_placa) < 7:
+                texto_placa = "Placa: No identificada"
+                # draw_analysis_area(frame, area_pts, color, texto_movimiento)
+                # draw_analysis_area(frame, area_pts, color, texto_movimiento)
 
-    draw_analysis_area(frame, area_pts, color, texto_movimiento)
+    draw_analysis_area(frame, area_pts, color, texto_placa)
     return frame
 
 def create_mask(frame, area_pts, canny):
@@ -85,8 +100,7 @@ def create_mask(frame, area_pts, canny):
     return imAux
 
 def get_contours(image_area):
-    cnts, _ = cv2.findContours(image_area, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
-    return cnts
+    return cv2.findContours(image_area, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)[0]
 
 def get_area_and_approx(cnt):
     area = cv2.contourArea(cnt)
@@ -95,8 +109,7 @@ def get_area_and_approx(cnt):
     return area, approx
 
 def get_plate_text(placa):
-    texto_movimiento = "Placa: " + pytesseract.image_to_string(placa, config='--oem 3 --psm 9 -c tessedit_char_whitelist=ABCDEFGHIJKLMÑNOPQRSTUVWXYZ0123456789')
-    return texto_movimiento
+    return "Placa: " + pytesseract.image_to_string(placa, config='--oem 3 --psm 11 -c tessedit_char_whitelist=ABCDEFGHIJKLMÑNOPQRSTUVWXYZ0123456789')
 
 def draw_analysis_area(frame, area_pts, color, texto_movimiento):
     cv2.rectangle(frame, (0,0), (frame.shape[1],40), (0,255,0), 3)
