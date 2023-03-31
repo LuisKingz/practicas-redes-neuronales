@@ -1,8 +1,7 @@
 import tkinter as tk
+from tkinter import ttk
 import cv2
 import imutils
-import time
-import numpy as np
 import PIL.Image, PIL.ImageTk
 from video_loader_v3 import select_area_of_interest,process_frame
 
@@ -11,11 +10,14 @@ class VideoPlayer:
         self.master = master
         self.master.title("Reproductor de Video")
         self.master.protocol("WM_DELETE_WINDOW", self.close_window)
+        self.grid_master = tk.Frame(self.master)
         
         self.playing = False
         self.paused = False
         self.started = False
-        self.texto_placas = "Placas: No identificadas";
+        self.texto_placas = ""
+        self.plate = ""
+        self.index_plate = 1
         
         self.cap = cv2.VideoCapture("C:/Users/Gerardo/Downloads/Untitled.avi")
         self.fps = int(self.cap.get(cv2.CAP_PROP_FPS))
@@ -23,60 +25,84 @@ class VideoPlayer:
         self.current_time = 0
         self.dragging_slider = False
     
-        self.canvas = tk.Canvas(self.master, width=1500, height=680)
-        self.canvas.pack()
+        self.canvas = tk.Canvas(self.grid_master, width=1208, height=680)
+        self.canvas.grid(row=0,column=0, padx=10, pady=10)
+        #self.canvas.pack()
+
+        self.table = ttk.Treeview(self.grid_master, columns=("placa"))
+        self.table.heading("#0",text="Índice")
+        self.table.heading("placa",text="Placa")
+        self.table.grid(row=0,column=1, padx=10, pady=10)
+        #self.table.pack(side=tk.RIGHT)
+
         
         self.create_buttons()
         ret,frame = self.cap.read()        
         self.area_pts = select_area_of_interest(frame)
         self.update_frame()
         self.total_time_video()
-    
-    def create_buttons(self):
-        self.btn_play = tk.Button(self.master, text="Reproducir", command=self.play)
-        self.btn_play.pack(side=tk.LEFT, padx=10)
-        
-        self.btn_pause = tk.Button(self.master, text="Pausar", command=self.pause, state=tk.DISABLED)
-        self.btn_pause.pack(side=tk.LEFT)
-        
-        self.btn_stop = tk.Button(self.master, text="Detener", command=self.stop, state=tk.DISABLED)
-        self.btn_stop.pack(side=tk.LEFT)
-        
-        self.btn_start = tk.Button(self.master, text="Inicio", command=self.start, state=tk.DISABLED)
-        self.btn_start.pack(side=tk.LEFT, padx=10)
-        
-        self.btn_backward = tk.Button(self.master, text="<<", command=self.backward, state=tk.DISABLED)
-        self.btn_backward.pack(side=tk.LEFT)
-        
-        self.btn_forward = tk.Button(self.master, text=">>", command=self.forward, state=tk.DISABLED)
-        self.btn_forward.pack(side=tk.LEFT)
+        self.grid_master.pack()
 
-        # self.time_label = tk.Label(self.master, text="0:00 / 0:00")
-        # self.time_label.pack(side=tk.LEFT, padx=10)
-        self.time_label = tk.Label(self.master, text="00:00:00")
-        self.time_label.pack(side=tk.BOTTOM, pady=10)
-        
-        self.total_time_label = tk.Label(self.master, text="00:00:00")
-        self.total_time_label.pack(side=tk.RIGHT, pady=10)
-        
-        # self.slider = tk.Scale(self.master, from_=0, to=self.total_frames, orient=tk.HORIZONTAL, length=800, command=self.slide)
-        # self.slider.pack(side=tk.LEFT)
-        self.time_slider = tk.Scale(self.master, from_=0, to=self.total_frames, orient=tk.HORIZONTAL, length=1000, command=self.slide)
-        self.time_slider.pack(side=tk.BOTTOM, pady=10)
+    def create_buttons(self):
+        self.buttons_frame = tk.Frame(self.grid_master)
+        self.buttons_frame.grid(row=1,column=0);
+        self.slider_frame = tk.Frame(self.grid_master)
+        self.slider_frame.grid(row=2,column=0);
+        #self.buttons_frame.pack()
+
+        self.btn_play = tk.Button(self.buttons_frame, text="Reproducir", command=self.play)
+        self.btn_play.grid(row=0, column=0, padx=10, pady=10)
+
+        self.btn_pause = tk.Button(self.buttons_frame, text="Pausar", command=self.pause, state=tk.DISABLED)
+        self.btn_pause.grid(row=0, column=1, padx=10, pady=10)
+
+        self.btn_stop = tk.Button(self.buttons_frame, text="Detener", command=self.stop, state=tk.DISABLED)
+        self.btn_stop.grid(row=0, column=2, padx=10, pady=10)
+
+        self.btn_start = tk.Button(self.buttons_frame, text="Inicio", command=self.start, state=tk.DISABLED)
+        self.btn_start.grid(row=0, column=3, padx=10, pady=10)
+
+        self.btn_backward = tk.Button(self.buttons_frame, text="<<", command=self.backward, state=tk.DISABLED)
+        self.btn_backward.grid(row=0, column=4, padx=10, pady=10)
+
+        self.btn_forward = tk.Button(self.buttons_frame, text=">>", command=self.forward, state=tk.DISABLED)
+        self.btn_forward.grid(row=0, column=5, padx=10, pady=10)
+
+        self.time_label = tk.Label(self.slider_frame, text="00:00:00")
+        #self.time_label.pack(side=tk.LEFT, pady=10)
+        self.time_label.grid(row=0,column=0,padx=10, pady=10)
+
+        self.time_slider = tk.Scale(self.slider_frame, from_=0, to=self.total_frames, orient=tk.HORIZONTAL, length=1000, command=self.slide)
+        # self.time_slider.pack(side=tk.BOTTOM, pady=10)
+        self.time_slider.grid(row=0,column=1,padx=10, pady=10)
+
+        self.total_time_label = tk.Label(self.slider_frame, text="00:00:00")
+        #self.total_time_label.pack(side=tk.RIGHT, pady=10)
+        self.total_time_label.grid(row=0,column=2,padx=10, pady=10)
+
 
     def update_frame(self):
         
         if self.playing:
             if not self.paused:
                 ret, frame = self.cap.read()
-                frame = process_frame(frame,self.area_pts,self.texto_placas)
+                frame = imutils.resize(frame,height=680)
+                plate_text,frame = process_frame(frame,self.area_pts,self.texto_placas)
+                if len(plate_text) > 6 and plate_text != "":
+                    self.plate = plate_text
+                    self.add_text_to_table()
+                
                 if ret:
                     if (self.cap.isOpened()):
 
-                        frame = imutils.resize(frame, width=1500)
+                        #frame = imutils.resize(frame, width=1500,height=680)
                         cv2image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                         img = PIL.Image.fromarray(cv2image)
-                        imgtk = PIL.ImageTk.PhotoImage(image=img)
+                        new_height = 680
+                        ratio = float(new_height) / img.size[1]
+                        new_width = int(ratio * img.size[0])
+                        resized_img = img.resize((new_width, new_height))
+                        imgtk = PIL.ImageTk.PhotoImage(image=resized_img)
                         self.canvas.create_image(0, 0, image=imgtk, anchor=tk.NW)
                         self.canvas.image = imgtk
 
@@ -146,7 +172,6 @@ class VideoPlayer:
     
     def slide(self, val):
         self.current_time = int(val)
-        print(f'current time: {self.current_time}')
         self.dragging_slider = True
     
     def update_time_label(self):
@@ -164,6 +189,10 @@ class VideoPlayer:
         minutes, seconds = divmod(rem,60)
         time_str = "{:02d}:{:02d}:{:02d}".format(hours,minutes,seconds)
         self.total_time_label.config(text=time_str)
+    
+    def add_text_to_table(self):
+        self.table.insert(parent="",index=self.index_plate,iid=self.index_plate,text=self.index_plate,values=(self.plate))
+        self.index_plate +=1
 
 if __name__ == "__main__":
     root = tk.Tk()

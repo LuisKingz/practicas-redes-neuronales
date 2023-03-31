@@ -10,7 +10,7 @@ text_identify = False
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract'
 
 def select_area_of_interest(frame):
-    frame = imutils.resize(frame, width=1500)
+    frame = imutils.resize(frame,height=680)
     # Create a copy of the input frame to display the selected area
     frame_copy = frame.copy()
     # Select the area of interest using the cv2.selectROI function
@@ -35,7 +35,7 @@ def main():
             cap.release()
             cv2.destroyAllWindows()  
     
-    texto_placa = "Placa: No identificada"
+    texto_placa = ""
     while (cap.isOpened()):
         ret, frame = cap.read();
         if ret == False: break
@@ -74,7 +74,7 @@ def process_frame(frame, area_pts,texto_placa):
     
     imAux = create_mask(frame, area_pts, canny)
     image_area = cv2.bitwise_or(canny, canny, mask=imAux)
-    cv2.imshow("image_area",image_area)
+    #cv2.imshow("image_area",image_area)
 
     cnts = get_contours(image_area)
     color = (0, 255, 0)  
@@ -89,13 +89,13 @@ def process_frame(frame, area_pts,texto_placa):
             # cv2.imshow("placa", placa)
             texto_placa = get_plate_text(placa)
             color = (0,255,0)
-            if len(texto_placa) < 7:
-                texto_placa = "Placa: No identificada"
+            if len(texto_placa) < 7 and texto_placa != "":
+                texto_placa = ""
                 # draw_analysis_area(frame, area_pts, color, texto_movimiento)
                 # draw_analysis_area(frame, area_pts, color, texto_movimiento)
 
     draw_analysis_area(frame, area_pts, color, texto_placa)
-    return frame
+    return texto_placa,frame
 
 def create_mask(frame, area_pts, canny):
     imAux = np.zeros(shape=(frame.shape[:2]), dtype=np.uint8)
@@ -112,10 +112,10 @@ def get_area_and_approx(cnt):
     return area, approx
 
 def get_plate_text(placa):
-    return "Placa: " + pytesseract.image_to_string(placa, config='--oem 3 --psm 11 -c tessedit_char_whitelist=ABCDEFGHIJKLMÑNOPQRSTUVWXYZ0123456789')
+    return pytesseract.image_to_string(placa, config='--oem 3 --psm 11 -c tessedit_char_whitelist=ABCDEFGHIJKLMÑNOPQRSTUVWXYZ0123456789')
 
 def draw_analysis_area(frame, area_pts, color, texto_movimiento):
-    cv2.rectangle(frame, (0,0), (frame.shape[1],40), (0,255,0), 3)
+    #cv2.rectangle(frame, (0,0), (frame.shape[1],40), (0,255,0), 3)
     cv2.drawContours(frame, [area_pts], -1, color, 2)
-    cv2.putText(frame, texto_movimiento, (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
+    #cv2.putText(frame, texto_movimiento, (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
 
