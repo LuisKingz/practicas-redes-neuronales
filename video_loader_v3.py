@@ -7,6 +7,7 @@ from tkinter import ttk, messagebox
 
 flag = True
 text_identify = False
+pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract'
 
 def select_area_of_interest(frame):
     frame = imutils.resize(frame, width=1500)
@@ -21,16 +22,18 @@ def select_area_of_interest(frame):
 
 def main():
     cap = cv2.VideoCapture('C:/Users/Gerardo/Downloads/Untitled.avi')
-    pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract'
+    #pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract'
     
     ret, frame = cap.read()
     area_pts = select_area_of_interest(frame)
     if area_pts[0][0] == 0 and area_pts [1][0] == 0 and area_pts[2][0] == 0 and area_pts[3][0] == 0:
-        response =  messagebox.askyesno(message="Mensaje", title="Título")
+        response =  messagebox.askyesno(message="No has seleccionado área de interes, ¿Volver a seleccionar?", title="Título")
         if response:
-            print("de nuevo")
+            area_pts = select_area_of_interest(frame)
+        
         else:
-            print("continuar")        
+            cap.release()
+            cv2.destroyAllWindows()  
     
     texto_placa = "Placa: No identificada"
     while (cap.isOpened()):
@@ -71,7 +74,7 @@ def process_frame(frame, area_pts,texto_placa):
     
     imAux = create_mask(frame, area_pts, canny)
     image_area = cv2.bitwise_or(canny, canny, mask=imAux)
-    # cv2.imshow("image_area",image_area)
+    cv2.imshow("image_area",image_area)
 
     cnts = get_contours(image_area)
     color = (0, 255, 0)  
@@ -116,4 +119,3 @@ def draw_analysis_area(frame, area_pts, color, texto_movimiento):
     cv2.drawContours(frame, [area_pts], -1, color, 2)
     cv2.putText(frame, texto_movimiento, (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
 
-main()
