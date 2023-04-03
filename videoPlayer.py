@@ -3,7 +3,7 @@ from tkinter import ttk
 import cv2
 import imutils
 import PIL.Image, PIL.ImageTk
-from video_loader_v3 import select_area_of_interest,process_frame
+from Analyzer_plates import select_area_of_interest,process_frame
 
 class VideoPlayer:
     def __init__(self, master):
@@ -69,7 +69,6 @@ class VideoPlayer:
         self.btn_forward.grid(row=0, column=5, padx=10, pady=10)
 
         self.time_label = tk.Label(self.slider_frame, text="00:00:00")
-        #self.time_label.pack(side=tk.LEFT, pady=10)
         self.time_label.grid(row=0,column=0,padx=10, pady=10)
 
         self.time_slider = tk.Scale(self.slider_frame, from_=0, to=self.total_frames, orient=tk.HORIZONTAL, length=1000, command=self.slide)
@@ -77,7 +76,6 @@ class VideoPlayer:
         self.time_slider.grid(row=0,column=1,padx=10, pady=10)
 
         self.total_time_label = tk.Label(self.slider_frame, text="00:00:00")
-        #self.total_time_label.pack(side=tk.RIGHT, pady=10)
         self.total_time_label.grid(row=0,column=2,padx=10, pady=10)
 
 
@@ -94,8 +92,6 @@ class VideoPlayer:
                 
                 if ret:
                     if (self.cap.isOpened()):
-
-                        #frame = imutils.resize(frame, width=1500,height=680)
                         cv2image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                         img = PIL.Image.fromarray(cv2image)
                         new_height = 680
