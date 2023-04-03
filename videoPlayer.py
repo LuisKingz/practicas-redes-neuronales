@@ -4,6 +4,7 @@ import cv2
 import imutils
 import PIL.Image, PIL.ImageTk
 from Analyzer_plates import select_area_of_interest,process_frame
+from DnD import DragAndDrop
 
 class VideoPlayer:
     def __init__(self, master):
@@ -29,9 +30,12 @@ class VideoPlayer:
         self.canvas.grid(row=0,column=0, padx=10, pady=10)
         #self.canvas.pack()
 
-        self.table = ttk.Treeview(self.grid_master, columns=("placa"))
-        self.table.heading("#0",text="Índice")
-        self.table.heading("placa",text="Placa")
+        self.table = ttk.Treeview(self.grid_master)
+        self.configure_table()
+        # self.table.heading("#0",text="Índice")
+        # self.table.column("#0", width=50)
+        # self.table.heading("placa",text="Placa")
+        # self.table.column("placa",width=100)
         self.table.grid(row=0,column=1, padx=10, pady=10)
         #self.table.pack(side=tk.RIGHT)
 
@@ -79,19 +83,59 @@ class VideoPlayer:
         self.total_time_label.grid(row=0,column=2,padx=10, pady=10)
 
 
-    def update_frame(self):
+    # def update_frame(self):
         
+    #     if self.playing:
+    #         if not self.paused:
+    #             ret, frame = self.cap.read()
+    #             frame = imutils.resize(frame,height=680)
+    #             plate_text,frame = process_frame(frame,self.area_pts,self.texto_placas)
+    #             if len(plate_text) > 6 and plate_text != "":
+    #                 self.plate = plate_text
+    #                 self.add_text_to_table()
+                
+    #             if ret:
+    #                 if (self.cap.isOpened()):
+    #                     cv2image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    #                     img = PIL.Image.fromarray(cv2image)
+    #                     new_height = 680
+    #                     ratio = float(new_height) / img.size[1]
+    #                     new_width = int(ratio * img.size[0])
+    #                     resized_img = img.resize((new_width, new_height))
+    #                     imgtk = PIL.ImageTk.PhotoImage(image=resized_img)
+    #                     self.canvas.create_image(0, 0, image=imgtk, anchor=tk.NW)
+    #                     self.canvas.image = imgtk
+
+    #                     if not self.started:
+    #                         self.started = True
+    #                         self.btn_pause.config(state=tk.NORMAL)
+    #                         self.btn_stop.config(state=tk.NORMAL)
+    #                         self.btn_start.config(state=tk.NORMAL)
+    #                         self.btn_backward.config(state=tk.NORMAL)
+    #                         self.btn_forward.config(state=tk.NORMAL)
+    #             else:
+    #                 self.stop()
+    #     self.update_time_label()
+    #     self.time_slider.set(int(self.cap.get(cv2.CAP_PROP_POS_FRAMES)))
+    #     self.master.after(1000 // self.fps, self.update_frame)
+    
+    def update_frame(self):
         if self.playing:
             if not self.paused:
-                ret, frame = self.cap.read()
-                frame = imutils.resize(frame,height=680)
-                plate_text,frame = process_frame(frame,self.area_pts,self.texto_placas)
-                if len(plate_text) > 6 and plate_text != "":
-                    self.plate = plate_text
-                    self.add_text_to_table()
-                
+                ret = self.cap.grab()
                 if ret:
                     if (self.cap.isOpened()):
+                        self.current_time = int(self.cap.get(cv2.CAP_PROP_POS_FRAMES))
+                        self.time_slider.set(self.current_time)
+                        self.update_time_label()
+
+                        ret, frame = self.cap.retrieve()
+                        frame = imutils.resize(frame,height=680)
+                        plate_text,frame = process_frame(frame,self.area_pts,self.texto_placas)
+                        if len(plate_text) > 6 and plate_text != "":
+                            self.plate = plate_text
+                            self.add_text_to_table()
+
                         cv2image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                         img = PIL.Image.fromarray(cv2image)
                         new_height = 680
@@ -114,7 +158,8 @@ class VideoPlayer:
         self.update_time_label()
         self.time_slider.set(int(self.cap.get(cv2.CAP_PROP_POS_FRAMES)))
         self.master.after(1000 // self.fps, self.update_frame)
-    
+
+
     def play(self):
         if not self.paused:
             self.playing = True
@@ -141,6 +186,7 @@ class VideoPlayer:
         # Vuelve a reproducir desde el principio
         self.cap = cv2.VideoCapture("C:/Users/Gerardo/Downloads/Untitled.avi")
         self.canvas.delete("all")
+        self.delete_columns()
 
     def start(self):
         self.cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
@@ -165,10 +211,11 @@ class VideoPlayer:
         self.paused = True
         self.cap.release()
         self.master.destroy()
-    
-    def slide(self, val):
-        self.current_time = int(val)
-        self.dragging_slider = True
+
+    def slide(self, event):
+        self.current_time = int(self.time_slider.get())
+        self.update_time_label()
+        self.cap.set(cv2.CAP_PROP_POS_FRAMES, self.current_time)
     
     def update_time_label(self):
         current_frame = int(self.cap.get(cv2.CAP_PROP_POS_FRAMES))
@@ -189,6 +236,22 @@ class VideoPlayer:
     def add_text_to_table(self):
         self.table.insert(parent="",index=self.index_plate,iid=self.index_plate,text=self.index_plate,values=(self.plate))
         self.index_plate +=1
+    
+    def delete_columns(self):
+        self.table.delete(*self.table.get_children())
+        self.index_plate = 1    
+        # for column in self.table["columns"]:
+        #     self.table.heading(column, text="")
+        #     self.table.column(column, width=0)
+        # self.table["columns"] = ()
+        #self.configure_table()
+       
+    def configure_table(self):
+        self.table.configure(columns=("placa"))
+        self.table.heading("#0", text="Index")
+        self.table.heading("placa", text="Placa")
+        self.table.column("#0", width=50)
+        self.table.column("placa", width=100)
 
 if __name__ == "__main__":
     root = tk.Tk()
