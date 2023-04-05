@@ -233,7 +233,10 @@ class VideoPlayer:
         self.cap.set(cv2.CAP_PROP_POS_FRAMES, self.current_time)
 
     def slide_mousewheel(self,event):
-        print(event)
+        if event.delta > 0:
+            self.forward()
+        else:
+            self.backward()
     
     def update_time_label(self):
         current_frame = int(self.cap.get(cv2.CAP_PROP_POS_FRAMES))
