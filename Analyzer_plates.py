@@ -65,7 +65,7 @@ def main():
 
 def process_frame(frame, area_pts,texto_placa):
     global text_identify
-    frame = imutils.resize(frame, width=1500)
+    #frame = imutils.resize(frame, width=1500)
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     gray = cv2.blur(gray, (2, 2))
     canny = cv2.Canny(gray, 80, 150)
@@ -74,7 +74,7 @@ def process_frame(frame, area_pts,texto_placa):
     
     imAux = create_mask(frame, area_pts, canny)
     image_area = cv2.bitwise_or(canny, canny, mask=imAux)
-    #cv2.imshow("image_area",image_area)
+    cv2.imshow("image_area",image_area)
 
     cnts = get_contours(image_area)
     color = (0, 255, 0)  
